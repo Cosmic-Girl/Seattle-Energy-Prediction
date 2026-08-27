@@ -1,0 +1,11 @@
+(p06_api) PS C:\Users\valen\OneDrive\Documents\Formation - cours\@2026 à 2027 - Openclassrooms - Data Engineer\06 - Anticipez les besoins en consommation de bâtiments\P06_Seattle> python api\test_api.py --url https://se-69f456de393046ed9933ac1391cd579e.ecs.eu-west-3.on.aws/
+
+--- Requête valide ---
+URL : https://se-69f456de393046ed9933ac1391cd579e.ecs.eu-west-3.on.aws/predict
+Code HTTP : 200
+Réponse : {'predicted_site_energy_kbtu': 5771468.9475621}
+
+--- Requête invalide ---
+URL : https://se-69f456de393046ed9933ac1391cd579e.ecs.eu-west-3.on.aws/predict
+Code HTTP : 400
+Réponse : {'error': '1 validation error for Input', 'detail': [{'type': 'value_error', 'loc': ['data'], 'msg': 'Value error, PropertyGFAParking ne peut pas dépasser PropertyGFATotal.', 'url': 'https://errors.pydantic.dev/2.13/v/value_error'}]}

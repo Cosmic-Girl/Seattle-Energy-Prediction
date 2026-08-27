@@ -1,0 +1,18 @@
+service: "api.service:SeattleEnergyService"
+
+include:
+  - "api/service.py"
+  - "api/schemas.py"
+
+models:
+  - "seattle_energy_model:g2scdqmsgk6gjlax"
+
+python:
+  packages:
+    - "bentoml==1.4.39"
+    - "scikit-learn==1.9.0"
+    - "pandas==3.0.5"
+    - "pydantic==2.13.4"
+
+docker:
+  python_version: "3.11"
