@@ -24,7 +24,6 @@ class PrimaryPropertyTypeEnum(str, Enum):
     LOW_RISE_MULTIFAMILY = "Low-Rise Multifamily"
     MEDICAL_OFFICE = "Medical Office"
     MIXED_USE_PROPERTY = "Mixed Use Property"
-    OFFICE = "Office"
     OTHER = "Other"
     REFRIGERATED_WAREHOUSE = "Refrigerated Warehouse"
     RESIDENCE_HALL = "Residence Hall"
@@ -45,7 +44,6 @@ class LargestPropertyUseTypeEnum(str, Enum):
     AUTOMOBILE_DEALERSHIP = "Automobile Dealership"
     BANK_BRANCH = "Bank Branch"
     COLLEGE_UNIVERSITY = "College/University"
-    CONVENTION_CENTER = "Convention Center"
     COURTHOUSE = "Courthouse"
     DATA_CENTER = "Data Center"
     DISTRIBUTION_CENTER = "Distribution Center"
@@ -150,7 +148,7 @@ class BuildingInput(BaseModel):
     PrimaryPropertyType: PrimaryPropertyTypeEnum = Field(
         ...,
         description="Type principal du bâtiment.",
-        examples=["Office"],
+        examples=["Large Office"],
     )
 
     LargestPropertyUseType: LargestPropertyUseTypeEnum = Field(

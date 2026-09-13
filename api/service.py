@@ -25,7 +25,7 @@ class SeattleEnergyService:
         """Charge le pipeline enregistré dans le Model Store BentoML."""
 
         self.model = bentoml.sklearn.load_model(
-            "seattle_energy_model:g2scdqmsgk6gjlax"
+            "seattle_energy_model:vekvkwfo2cew7an6"
         )
 
     @bentoml.api

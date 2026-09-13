@@ -5,7 +5,7 @@ include:
   - "api/schemas.py"
 
 models:
-  - "seattle_energy_model:g2scdqmsgk6gjlax"
+  - "seattle_energy_model:vekvkwfo2cew7an6"
 
 python:
   packages:

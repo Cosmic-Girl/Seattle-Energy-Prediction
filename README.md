@@ -40,6 +40,15 @@ Le modèle est destiné aux **bâtiments non résidentiels** et utilise uniqueme
 des informations disponibles à partir des caractéristiques du bâtiment, sans
 recourir directement aux relevés de consommation énergétique à prédire.
 
+Après restriction aux bâtiments non résidentiels, le jeu contient **1 668 bâtiments**.
+
+Un contrôle qualité est ensuite appliqué à partir des variables fournies dans le jeu de données :
+
+- seuls les bâtiments dont `ComplianceStatus == "Compliant"` sont conservés ;
+- les observations signalées dans la variable `Outlier` sont exclues.
+
+Après ce filtrage, **1 548 bâtiments** sont retenus pour l'analyse et la modélisation.
+
 ## Structure du projet
 
 ```text
@@ -85,44 +94,67 @@ déclarer le service, le modèle et les dépendances nécessaires.
 
 ## Modélisation et modèle retenu
 
-Plusieurs algorithmes de régression ont été comparés selon une démarche commune reposant sur une séparation train/test et une validation croisée.
+Plusieurs algorithmes de régression ont été comparés selon un protocole commun reposant sur une séparation train/test, un pipeline de prétraitement identique et une validation croisée à 5 folds sur le jeu d'entraînement.
 
-Le modèle finalement retenu est une **régression linéaire**, intégrée dans un pipeline scikit-learn comprenant l'ensemble des étapes de prétraitement nécessaires à l'inférence :
+Quatre modèles supervisés appartenant à trois familles différentes ont été évalués :
 
-* imputation des valeurs manquantes ;
-* standardisation des variables numériques ;
-* encodage One-Hot des variables catégorielles ;
-* régression linéaire.
+- `LinearRegression` : modèle linéaire ;
+- `SVR` : famille des Support Vector Machines ;
+- `DecisionTreeRegressor` : modèle à base d'arbre ;
+- `RandomForestRegressor` : ensemble d'arbres.
+
+Un `DummyRegressor` est également utilisé comme baseline de référence.
+
+Tous les modèles sont comparés selon les mêmes métriques : MAE, RMSE et R².
+
+| Modèle | MAE CV | RMSE CV | R² CV |
+| --- | ---: | ---: | ---: |
+| Random Forest | 3,74 M | 11,31 M | 0,594 |
+| Régression linéaire | 4,71 M | 14,43 M | 0,285 |
+| Arbre de décision | 5,16 M | 15,34 M | 0,166 |
+| Dummy Regressor | 8,38 M | 19,14 M | ≈ 0 |
+| SVR | 6,64 M | 19,80 M | -0,082 |
+
+Le **Random Forest** présente les meilleures performances moyennes en validation croisée. Il est donc retenu pour l'optimisation.
+
+Une recherche d'hyperparamètres avec `GridSearchCV` a ensuite évalué **108 configurations** sur le jeu d'entraînement. La meilleure configuration atteint une RMSE moyenne en validation croisée d'environ **11,10 millions de kBtu**.
+
+Le modèle final est une **Random Forest optimisée**, intégrée dans un pipeline scikit-learn comprenant l'ensemble des étapes de prétraitement nécessaires à l'inférence :
+
+- imputation des valeurs manquantes ;
+- standardisation des variables numériques ;
+- encodage One-Hot des variables catégorielles ;
+- `RandomForestRegressor`.
 
 Le modèle utilise neuf variables :
 
-* `PropertyGFATotal`
-* `NumberofFloors`
-* `FloorAreaPerFloor`
-* `HasParking`
-* `BuildingAge`
-* `Latitude`
-* `Longitude`
-* `PrimaryPropertyType`
-* `LargestPropertyUseType`
+- `PropertyGFATotal`
+- `NumberofFloors`
+- `FloorAreaPerFloor`
+- `HasParking`
+- `BuildingAge`
+- `Latitude`
+- `Longitude`
+- `PrimaryPropertyType`
+- `LargestPropertyUseType`
 
 Trois de ces variables sont issues du feature engineering :
 
-* `FloorAreaPerFloor` : surface moyenne par étage ;
-* `HasParking` : indicateur de présence d'une surface de parking ;
-* `BuildingAge` : âge du bâtiment en 2016.
+- `FloorAreaPerFloor` : surface moyenne par étage ;
+- `HasParking` : indicateur de présence d'une surface de parking ;
+- `BuildingAge` : âge du bâtiment en 2016.
 
 ### Performances sur le jeu de test
 
-| Métrique |               Résultat |
-| -------- | ---------------------: |
-| MAE      |  6,65 millions de kBtu |
-| RMSE     | 20,23 millions de kBtu |
-| R²       |                  0,593 |
+| Métrique | Résultat |
+| --- | ---: |
+| MAE | 7,83 millions de kBtu |
+| RMSE | 52,19 millions de kBtu |
+| R² | 0,182 |
 
-Le modèle atteint un R² de **0,593** sur le jeu de test, ce qui traduit une capacité explicative partielle de la variabilité observée.
+Les performances sur le jeu de test sont nettement inférieures à celles observées en validation croisée. Quelques bâtiments présentant des consommations très élevées génèrent de grandes erreurs, particulièrement visibles avec la RMSE.
 
-Les performances restent toutefois hétérogènes selon les bâtiments : certaines observations génèrent des erreurs importantes et la régression linéaire n'impose pas de contrainte de positivité à ses prédictions. Le modèle constitue donc une estimation utile de la consommation énergétique, sans prétendre fournir une prédiction précise pour tous les profils de bâtiments.
+Le choix du modèle a été effectué **avant l'évaluation finale sur le jeu de test**, uniquement à partir des résultats de validation croisée obtenus sur le jeu d'entraînement. Le jeu de test reste ainsi utilisé uniquement pour l'évaluation finale de la capacité de généralisation.
 
 ## API de prédiction
 
@@ -182,7 +214,7 @@ en kBtu :
 
 ```json
 {
-  "predicted_site_energy_kbtu": 5771468.9475621
+  "predicted_site_energy_kbtu": 2808346.691303681
 }
 ```
 
@@ -239,7 +271,7 @@ Exemple :
 
 ```text
 Code HTTP : 200
-Réponse : {'predicted_site_energy_kbtu': 5771468.9475621}
+Réponse : {'predicted_site_energy_kbtu':2808346.691303681}
 ```
 
 Les données ne respectant pas le schéma ou les règles métier sont rejetées avant
@@ -374,12 +406,17 @@ une URL HTTPS publique a permis d'accéder à l'interface OpenAPI de BentoML.
 
 ### Validation du service déployé
 
+Le service est actuellement accessible à travers l'endpoint HTTPS public suivant :
+
+https://se-d0eee38bbf20486b99d0afad4677c388.ecs.eu-west-3.on.aws
+
+L'interface OpenAPI de BentoML permet de tester directement l'endpoint `POST /predict` depuis un navigateur.
+
 Deux scénarios ont été testés sur l'endpoint distant `POST /predict`.
 
 **Requête valide**
 
-Une requête contenant des caractéristiques de bâtiment conformes au schéma
-d'entrée retourne :
+Une requête contenant des caractéristiques de bâtiment conformes au schéma d'entrée retourne :
 
 `HTTP 200`
 
@@ -406,8 +443,7 @@ des règles de validation après conteneurisation et déploiement dans le Cloud.
 
 ### Preuves du déploiement
 
-Les captures suivantes ont été réalisées lors du déploiement du service sur AWS,
-avant la suppression des ressources Cloud.
+Les captures suivantes présentent les tests réalisés sur le service actuellement déployé sur AWS.
 
 **Interface BentoML accessible depuis l'endpoint HTTPS public :**
 
@@ -437,19 +473,6 @@ La sortie complète du test est conservée dans :
 
 ![Test de l'API AWS depuis le terminal](docs/screenshots/cloud-test-output.jpg)
 
-### Nettoyage des ressources Cloud
-
-Après validation du déploiement et conservation des preuves nécessaires, les
-ressources spécifiques au projet ont été supprimées afin de ne pas maintenir
-inutilement des ressources Cloud actives :
-
-- service ECS Express et tâches Fargate associées ;
-- image et dépôt ECR ;
-- rôles IAM créés spécifiquement pour le déploiement.
-
-Un contrôle final dans ECS a confirmé l'absence de service actif, de tâche en
-cours d'exécution et d'instance de conteneur associée au projet.
-
 ## Technologies utilisées
 
 Le projet mobilise principalement les outils suivants :
@@ -467,40 +490,23 @@ Le projet mobilise principalement les outils suivants :
 
 ## Limites et perspectives
 
-Le projet permet de construire une chaîne complète allant de la modélisation
-jusqu'à l'exposition du modèle à travers une API déployée dans le Cloud.
+Le projet permet de construire une chaîne complète allant de la modélisation jusqu'à l'exposition du modèle à travers une API déployée dans le Cloud.
 Plusieurs limites doivent néanmoins être prises en compte.
 
 ### Performances du modèle
 
-La régression linéaire retenue obtient un R² de `0,593` sur le jeu de test.
-Elle explique donc une partie significative de la variabilité observée, mais
-une part importante reste non expliquée.
+Le Random Forest optimisé obtient sur le jeu de test un R² de `0,182`, une MAE de `7,83 millions de kBtu` et une RMSE de `52,19 millions de kBtu`.
 
-Les erreurs sont également hétérogènes selon les bâtiments. Le modèle doit ainsi
-être considéré comme un outil d'estimation plutôt que comme une mesure précise
-de la consommation énergétique individuelle.
+Les performances sur ce jeu sont nettement inférieures à celles observées en validation croisée. Quelques bâtiments présentant des consommations très élevées génèrent des erreurs importantes et contribuent notamment à augmenter fortement la RMSE.
 
-### Prédictions négatives
-
-La régression linéaire ne contraint pas naturellement les prédictions à être
-positives. Des valeurs négatives peuvent donc apparaître pour certains profils
-de bâtiments alors qu'elles n'ont pas de sens physique pour une consommation
-énergétique.
-
-Dans une perspective de mise en production, ce comportement devrait être étudié
-plus précisément et pourrait conduire à adapter la modélisation ou le traitement
-de la variable cible.
+Le modèle doit donc être considéré comme un outil d'estimation dont la capacité de généralisation reste limitée, en particulier pour les bâtiments présentant des consommations extrêmes.
 
 ### Périmètre des données
 
-Le modèle est entraîné à partir des données de benchmarking énergétique 2016 de
-Seattle. Ses performances ont donc été évaluées dans ce contexte et ne permettent
-pas de conclure directement à une capacité de généralisation à d'autres villes,
-à d'autres périodes ou à des typologies de bâtiments différentes.
+Le modèle est entraîné à partir des données de benchmarking énergétique 2016 de Seattle. Ses performances ont donc été évaluées dans ce contexte et ne permettent
+pas de conclure directement à une capacité de généralisation à d'autres villes, à d'autres périodes ou à des typologies de bâtiments différentes.
 
-Les catégories acceptées par l'API correspondent par ailleurs aux catégories
-présentes dans les données utilisées lors de l'entraînement.
+Les catégories acceptées par l'API correspondent par ailleurs aux catégories présentes dans les données utilisées lors de l'entraînement.
 
 ### Déploiement
 

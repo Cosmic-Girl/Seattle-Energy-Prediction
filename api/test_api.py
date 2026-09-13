@@ -83,7 +83,7 @@ def main():
             "YearBuilt": 1985,
             "Latitude": 47.61,
             "Longitude": -122.33,
-            "PrimaryPropertyType": "Office",
+            "PrimaryPropertyType": "Large Office",
             "LargestPropertyUseType": "Office",
         }
     }
