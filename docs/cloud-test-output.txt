@@ -1,8 +1,7 @@
-﻿
---- Requête valide ---
+﻿--- Requête valide ---
 URL : https://se-d0eee38bbf20486b99d0afad4677c388.ecs.eu-west-3.on.aws/predict
 Code HTTP : 200
-Réponse : {'predicted_site_energy_kbtu': 6876189.454502645}
+Réponse : {'predicted_site_energy_kbtu': 2808346.691303681}
 
 --- Requête invalide ---
 URL : https://se-d0eee38bbf20486b99d0afad4677c388.ecs.eu-west-3.on.aws/predict

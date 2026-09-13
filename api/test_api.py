@@ -64,14 +64,14 @@ def main():
 
     valid_payload = {
         "data": {
-            "PropertyGFATotal": 88434,
-            "PropertyGFAParking": 0,
-            "NumberofFloors": 12,
-            "YearBuilt": 1927,
-            "Latitude": 47.6122,
-            "Longitude": -122.33799,
-            "PrimaryPropertyType": "Hotel",
-            "LargestPropertyUseType": "Hotel",
+            "PropertyGFATotal": 50000,
+            "PropertyGFAParking":5000,
+            "NumberofFloors": 5,
+            "YearBuilt": 1985,
+            "Latitude": 47.61,
+            "Longitude": -122.33,
+            "PrimaryPropertyType": "Large Office",
+            "LargestPropertyUseType": "Office",
         }
     }
 

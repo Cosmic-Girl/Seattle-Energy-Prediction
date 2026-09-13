@@ -1,5 +1,14 @@
 service: "api.service:SeattleEnergyService"
 
+description: |
+  API de prédiction de la consommation énergétique annuelle
+  des bâtiments non résidentiels de Seattle.
+
+  Le modèle exposé est une Random Forest optimisée.
+  Les données d'entrée sont validées avec Pydantic avant l'inférence.
+
+  Endpoint principal : POST /predict
+
 include:
   - "api/service.py"
   - "api/schemas.py"
